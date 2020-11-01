@@ -1,52 +1,61 @@
 #include "Monitor.h"
 
-
 Monitor::Monitor(string theName)
 {
-	theMutex = new CMutex("__MonitorMutex__" + theName);
-	monitorDataPool = new CDataPool("__MonitorDataPool__" + theName, sizeof(struct monitorData));
-	pointerToData = (struct monitorData*)monitorDataPool->LinkDataPool();
+	MonitorDataPool = new CDataPool("__MonitorDataPool__" + theName, sizeof(struct monitorData));
+	pMonitorData = (struct monitorData*)MonitorDataPool->LinkDataPool();
+
 	ps1 = new CSemaphore("__MonitorProducer1__" + theName, 0, 1);
 	ps2 = new CSemaphore("__MonitorProducer2__" + theName, 0, 1);
-	cs1 = new CSemaphore("__MonitorConsumer1__" + theName, 0, 1);
-	cs2 = new CSemaphore("__MonitorConsumer2__" + theName, 0, 1);
-	pointerToData->status = 0;//some random value
+	cs1 = new CSemaphore("__MonitorConsumer1__" + theName, 1, 1);
+	cs2 = new CSemaphore("__MonitorConsumer2__" + theName, 1, 1);
+
+	//initializatoin values
+	pMonitorData->Generalstatus = 1;
+	pMonitorData->floor = 0;
+	pMonitorData->direction = 0;
+	pMonitorData->door = 1;
 }
 
 Monitor::~Monitor()
 {
-	delete theMutex;
-	delete monitorDataPool;
+	delete MonitorDataPool;
+	delete pMonitorData;
+	delete ps1;
+	delete cs1;
+	delete ps2;
+	delete cs2;
 }
 
-int Monitor::get_elevator_status(int elevator_number)
+struct monitorData Monitor::get_elevator_status(int consumer)
 {
-	int x;
-	theMutex->Wait();
-	
-	x=pointerToData->status;
-	
-	theMutex->Signal();
-	return x ;
+	if (consumer == 1)  //1 for dispatcher, 2 for IO
+	{
+		ps1->Wait();
+		LocalData = *pMonitorData;
+		return LocalData;
+		cs1->Signal();
+	}
+	else{
+		ps2->Wait();
+		LocalData = *pMonitorData;
+		return LocalData;
+		cs2->Signal();
+	}
 }
 
-void Monitor::update_status(int status)
+void Monitor::update_status(int status, int floor, int direction, int door)
 {
-	theMutex->Wait();
-	pointerToData->status = status;
-	theMutex->Signal();
-}
+	cs1->Wait();
+	cs2->Wait();
 
-//void Monitor::WriteToScreen(int x, int y,string message)
-//{
-//	theMutex->Wait();
-//	//adding data to the datapool
-//	pointerToData->x = x;
-//	pointerToData->y = y;
-//	strcpy_s(pointerToData->Message, message.c_str());
-//	//accessing data from datapool
-//	MOVE_CURSOR(pointerToData->x, pointerToData->y);             	
-//	printf("%s", pointerToData->Message);
-//	fflush(stdout);
-//	theMutex->Signal();
-//}
+	//updating data
+	pMonitorData->Generalstatus = status;
+	pMonitorData->floor = floor; 
+	pMonitorData->direction = direction;
+	pMonitorData->door = door;
+
+	ps1->Signal();
+	ps2->Signal();
+
+}

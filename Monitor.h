@@ -1,16 +1,23 @@
 #pragma once
-#include "C:\RTExamples\RTExamples\rt.h"
-#include <string>
+#ifndef   __monitorData__
+#define   __monitorData__
+#include "Z:\RTExamples\rt.h"
+#include <iostream>
 using namespace std;
+
 struct monitorData {
-		int status;
+		int Generalstatus; //1: working 0:not
+		int floor; // 0-9
+		int direction; // 0: stationary 1:up  2:down
+		int door; //1: open 2:close
 };
 
-class Monitor
-{
-	CDataPool *monitorDataPool;
-	CMutex *theMutex;
-	struct monitorData *pointerToData;
+class Monitor{
+
+private:
+	CDataPool* MonitorDataPool;
+	struct monitorData *pMonitorData;
+	monitorData LocalData;
 	CSemaphore* ps1;
 	CSemaphore*	cs1;
 	CSemaphore*	ps2;
@@ -18,8 +25,9 @@ class Monitor
 public:
 	Monitor(string theName);
 	~Monitor();
-	int get_elevator_status(int elevator_number);
-	void update_status(int status);
+	struct monitorData get_elevator_status(int consumer);
+	void update_status(int Generalstatus, int floor, int direction, int door);
 
 };
 
+#endif 
