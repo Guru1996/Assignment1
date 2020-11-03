@@ -54,28 +54,43 @@ UINT __stdcall Elevator2_status_dealer(void* ThreadArgs) {
 
 UINT __stdcall get_command_keyboard(void* ThreadArgs) {
 	char c;
+	char prev;
 	int valid = 0;
 	char command[3];
 	while (1) {
-		for (int i = 0; i++;i<2){
-			c = getch();
-			if(i==0){
-				if (c =='u' || c =='d' || c =='1' || c =='2' || c=='+' || c=='-')
-					command[0] = c;
-				else{
-					valid = 0;
-					break;
-				}
+		//intialize variables
+		command[0] = '0';
+		command[1] = '0';
+		c = '0';
+		valid = 0;
+
+		c = _getch();
+		if (c == 'u' || c == 'd' || c == '1' || c == '2') {
+			command[0] = c;
+			valid = 0;
+			c = _getch();
+			if ((((int)(c)-(int)('0')) >= 0 && ((int)(c)-(int)('0')) <= 9)) {
+				command[1] = c;
+				valid = 1;
 			}
-			else if (i == 1) {
-				if (((int)(c)-(int)('0')) >= 0 && ((int)(c)-(int)('0')) <= 9){
-					command[1] = c;
-					valid = 1;
+		}
+
+		else if (c == '+' || c == '-') {
+			command[0] = c;
+			valid = 0;
+			c = _getch();
+			if (c == '1' || c == '2') {
+				command[1] = c;
+				valid = 1;
 			}
-				else {
-					valid = 0;
-					break;
-				}
+		}
+		else if (c == 'e') {
+			command[0] = c;
+			valid = 0;
+			c = _getch();
+			if (c == 'e') {
+				command[1] = c;
+				valid = 1;
 			}
 		}
 
