@@ -5,6 +5,7 @@
 #include <conio.h>
 using namespace std;
 
+CRendezvous     s1("Start", 4);
 Monitor e1("elevator_1");
 Monitor e2("elevator_2");
 monitorData e1_data;
@@ -125,5 +126,12 @@ UINT __stdcall get_command_keyboard(void* ThreadArgs) {
 
 int main(void) {
 
+	s1.Wait();
+	CThread   t1(Elevator1_status_dealer, ACTIVE, NULL);
+	CThread   t2(Elevator2_status_dealer, ACTIVE, NULL);
+	CThread   t3(get_command_keyboard, ACTIVE, NULL);
+	t1.WaitForThread();
+	t2.WaitForThread();
+	t3.WaitForThread();
 	return 0;
 }
