@@ -65,7 +65,7 @@ UINT __stdcall get_command_keyboard(void* ThreadArgs) {
 		valid = 0;
 
 		c = _getch();
-		if (c == 'u' || c == 'd' || c == '1' || c == '2') {
+		if (c == '1' || c == '2') {
 			command[0] = c;
 			valid = 0;
 			c = _getch();
@@ -74,6 +74,27 @@ UINT __stdcall get_command_keyboard(void* ThreadArgs) {
 				valid = 1;
 			}
 		}
+
+		if (c == 'u') {
+			command[0] = c;
+			valid = 0;
+			c = _getch();
+			if ((((int)(c)-(int)('0')) >= 0 && ((int)(c)-(int)('0')) < 9)) {
+				command[1] = c;
+				valid = 1;
+			}
+		}
+
+		if (c == 'd') {
+			command[0] = c;
+			valid = 0;
+			c = _getch();
+			if ((((int)(c)-(int)('0')) > 0 && ((int)(c)-(int)('0')) <= 9)) {
+				command[1] = c;
+				valid = 1;
+			}
+		}
+
 
 		else if (c == '+' || c == '-') {
 			command[0] = c;
