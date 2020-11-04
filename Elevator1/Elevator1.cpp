@@ -2,6 +2,8 @@
 #include "../Monitor.h"
 #include <iostream>
 using namespace std;
+
+CRendezvous     s1("Start", 4);
 Monitor e1("elevator_1");
 monitorData e1_data;
 int floors_to_stop[10] = { 0 };
@@ -27,6 +29,7 @@ UINT __stdcall Get_commands(void* ThreadArgs) {
 }
 
 int main(void) {
+	s1.Wait();
 	int current_floor = 0;
 	int status = 1;
 	int direction = 0;
