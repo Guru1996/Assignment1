@@ -3,6 +3,7 @@
 #include <iostream>
 using namespace std;
 
+CRendezvous     s1("Start", 4);
 Monitor e1("elevator_1");
 Monitor e2("elevator_2");
 monitorData e1_data;
@@ -71,8 +72,8 @@ int main(void) {
 	);
 
 	//wait for processes to be created
-	Sleep(1000);
-
+	//Sleep(1000);
+	s1.Wait();
 	//dispatcher code
 	while (1) {
 		e1_mutex->Wait();
