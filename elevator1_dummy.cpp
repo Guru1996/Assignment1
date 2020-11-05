@@ -88,6 +88,7 @@ int main(void) {
 	int door = 1;
 	int dummy;
 	int dummy_command;
+	CThread   t1(Get_commands, ACTIVE, NULL);
 	//just keep moving in the same direction as long as there are any requests in that direction
 	while (1) {//999 means fault +1,  111 means resolved , 555 meanss termination go back to 0---pending
 		local_command_mutex->Wait();
@@ -192,7 +193,7 @@ int main(void) {
 
 		}//while loop
 
-
+		t1.WaitForThread();
 
 		return 0;
 	}
