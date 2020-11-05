@@ -5,15 +5,15 @@
 #include <conio.h>
 using namespace std;
 
-CRendezvous     s1("Start", 4);
+CRendezvous s1("Start", 4);
 Monitor e1("elevator_1");
 Monitor e2("elevator_2");
 monitorData e1_data;
 monitorData e2_data;
-Screen s("display");
+Screen s("displayIO");
 
-CMutex* e1_mutex = new CMutex("e1_mutex");
-CMutex* e2_mutex = new CMutex("e2_mutex");
+//CMutex* e1_mutex = new CMutex("e1_mutex");
+//CMutex* e2_mutex = new CMutex("e2_mutex");
 
 CTypedPipe <char[3]> DispatcherIOpipe("DIO", 1);
 
@@ -23,13 +23,13 @@ UINT __stdcall Elevator1_status_dealer(void* ThreadArgs) {
 		//e1_mutex->Wait();
 		e1_data = e1.get_elevator_status(2); //reading data and writing to the screen
 		sprintf_s(buff, "direction: %i ", e1_data.direction);
-		s.WriteToScreen(1, 5, "white", buff);
+		//s.WriteToScreen(1, 5, "white", buff);
 		sprintf_s(buff, "floor: %i ", e1_data.floor);
-		s.WriteToScreen(15, 5, "white", buff);
+		//s.WriteToScreen(15, 5, "white", buff);
 		sprintf_s(buff, "door: %i ", e1_data.door);
-		s.WriteToScreen(25, 5, "white", buff);
+		//s.WriteToScreen(25, 6, "white", buff);
 		sprintf_s(buff, "status: %i ", e1_data.Generalstatus);
-		s.WriteToScreen(35, 5, "white", buff);
+		//s.WriteToScreen(35, 6, "white", buff);
 		//e1_mutex->Signal();
 	}
 
@@ -41,13 +41,13 @@ UINT __stdcall Elevator2_status_dealer(void* ThreadArgs) {
 	while (1) {
 		e2_data = e2.get_elevator_status(2);
 		sprintf_s(buff, "direction: %i ", e2_data.direction);
-		s.WriteToScreen(45, 5, "white", buff);
+		//s.WriteToScreen(45, 5, "white", buff);
 		sprintf_s(buff, "floor: %i ", e2_data.floor);
-		s.WriteToScreen(55, 5, "white", buff);
+		//s.WriteToScreen(55, 5, "white", buff);
 		sprintf_s(buff, "door: %i ", e2_data.door);
-		s.WriteToScreen(65, 5, "white", buff);
+		//s.WriteToScreen(65, 6, "white", buff);
 		sprintf_s(buff, "status: %i ", e2_data.Generalstatus);
-		s.WriteToScreen(75, 5, "white", buff);
+		//s.WriteToScreen(75, 6, "white", buff);
 	}
 
 	return 0;
@@ -55,8 +55,8 @@ UINT __stdcall Elevator2_status_dealer(void* ThreadArgs) {
 
 UINT __stdcall get_command_keyboard(void* ThreadArgs) {
 	char c;
-	char prev;
 	int valid = 0;
+	char buff[30];
 	char command[3];
 	while (1) {
 		//intialize variables
@@ -76,7 +76,7 @@ UINT __stdcall get_command_keyboard(void* ThreadArgs) {
 			}
 		}
 
-		if (c == 'u') {
+		else if (c == 'u') {
 			command[0] = c;
 			valid = 0;
 			c = _getch();
@@ -86,7 +86,7 @@ UINT __stdcall get_command_keyboard(void* ThreadArgs) {
 			}
 		}
 
-		if (c == 'd') {
+		else if (c == 'd') {
 			command[0] = c;
 			valid = 0;
 			c = _getch();
@@ -118,18 +118,22 @@ UINT __stdcall get_command_keyboard(void* ThreadArgs) {
 
 		if (valid) {
 			command[2] = '\0';
+
+			sprintf_s(buff, "door: %i ", sizeof(command));
+			cout << buff << endl;
+			//s.WriteToScreen(1, 5, "white", buff);
 			DispatcherIOpipe.Write(&command); //send command to pipeline	//int TestForData (void) might need this at the other end		
 		}
 	}
-
+	return 0;
 }
 
 int main(void) {
-
-	s1.Wait();
 	CThread   t1(Elevator1_status_dealer, ACTIVE, NULL);
 	CThread   t2(Elevator2_status_dealer, ACTIVE, NULL);
 	CThread   t3(get_command_keyboard, ACTIVE, NULL);
+	s1.Wait();
+
 	t1.WaitForThread();
 	t2.WaitForThread();
 	t3.WaitForThread();

@@ -1,20 +1,23 @@
 #include "Z:\RTExamples\rt.h"
 #include "../Monitor.h"
+#include "../Screen.h"
 #include <iostream>
 using namespace std;
 
-CRendezvous     s1("Start", 4);
+CRendezvous s1("Start", 4);
 Monitor e1("elevator_1");
 Monitor e2("elevator_2");
 monitorData e1_data;
 monitorData e2_data;
+
+Screen s("displayDis");
 
 CMutex* e1_mutex = new CMutex("e1_mutex");
 CMutex* e2_mutex = new CMutex("e2_mutex");
 CMutex* cmd_mutex = new CMutex("cmd_mutex");
 
 CTypedPipe <char[3]> DispatcherIOpipe("DIO", 1);
-char command[3];
+char command[3] = {'0'};
 
 UINT __stdcall Elevator1_status_dealer(void* ThreadArgs) {
 	
@@ -41,11 +44,15 @@ UINT __stdcall Elevator2_status_dealer(void* ThreadArgs) {
 UINT __stdcall Get_commands(void* ThreadArgs) {
 
 	while (1) {
-		cmd_mutex->Wait();
-		if (DispatcherIOpipe.TestForData() == sizeof(char[3])) {
+		//cmd_mutex->Wait();
+		//if (DispatcherIOpipe.TestForData() == sizeof(char[3])) {
+			cmd_mutex->Wait(); //semaphore
 			DispatcherIOpipe.Read(&command);
-			}
-		cmd_mutex->Signal();
+			cout << command << endl;
+			cmd_mutex->Signal();
+			//s.WriteToScreen(1, 5, "white", command);
+		//	}
+		//cmd_mutex->Signal();
 	}
 	return 0;
 }
@@ -59,7 +66,7 @@ int main(void) {
 		ACTIVE				// create process in running/active state
 		);
 
-	CProcess   elevator2("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\Elevator1",
+	CProcess   elevator2("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\Elevator2",
 		NORMAL_PRIORITY_CLASS,		// a safe priority level
 		OWN_WINDOW,			// process uses its own window  ,
 		ACTIVE				// create process in running/active state
@@ -70,10 +77,16 @@ int main(void) {
 		OWN_WINDOW,			// process uses its own window  ,
 		ACTIVE				// create process in running/active state
 	);
-
-	//wait for processes to be created
-	//Sleep(1000);
 	s1.Wait();
+	Sleep(1000);
+	CThread   t1(Elevator1_status_dealer, ACTIVE, NULL);
+	CThread   t2(Elevator2_status_dealer, ACTIVE, NULL);
+	CThread   t3(Get_commands, ACTIVE, NULL);
+
+	//wait for processes and threads to be created in other programs
+	
+	//Sleep(1000);
+	cout << "while starting" << endl;
 	//dispatcher code
 	while (1) {
 		e1_mutex->Wait();
@@ -188,9 +201,12 @@ int main(void) {
 	}
 
 
-	//wait for porcesses to end
+	//wait for porcesses and threads to end
 	elevator1.WaitForProcess();
 	elevator2.WaitForProcess();
 	IO.WaitForProcess();
+	t1.WaitForThread();
+	t2.WaitForThread();
+	t3.WaitForThread();
 	return 0;
 }

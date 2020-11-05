@@ -1,19 +1,12 @@
 #pragma once
-#ifndef   __monitorData__
-#define   __monitorData__
+#ifndef   __Monitor__
+#define   __Monitor__
 #include "Z:\RTExamples\rt.h"
 #include <iostream>
+#include "struct_header.h"
 using namespace std;
 
-struct monitorData {
-		int Generalstatus; //1: working 0:not
-		int floor; // 0-9
-		int direction; // 0: stationary 1:up  2:down
-		int door; //1: open 2:close
-};
-
 class Monitor{
-
 private:
 	CDataPool* MonitorDataPool;
 	struct monitorData *pMonitorData;
@@ -22,6 +15,7 @@ private:
 	CSemaphore*	cs1;
 	CSemaphore*	ps2;
 	CSemaphore*	cs2;
+
 public:
 	Monitor(string theName);
 	~Monitor();

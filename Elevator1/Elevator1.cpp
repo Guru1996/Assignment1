@@ -12,7 +12,7 @@ UINT command;
 UINT local_command = 0;
 CMailbox   MyMailBox;
 CMutex* command1_mutex = new CMutex("command1_mutex");
-CMutex* local_command_mutex = new CMutex("local_command_mutex");
+CMutex* local_command_mutex = new CMutex("local_command1_mutex");
 //update_status(int status, int floor, int direction, int door)
 
 UINT __stdcall Get_commands(void* ThreadArgs) {
