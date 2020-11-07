@@ -20,12 +20,17 @@ CMutex* cmd_mutex = new CMutex("cmd_mutex");
 CTypedPipe <char[3]> DispatcherIOpipe("DIO", 1);
 char command[3] = {'0'};
 
+
 UINT __stdcall Elevator1_status_dealer(void* ThreadArgs) {
 	char buff[50];
+	int counter=0;
 	while (1) {
+		//s.WriteToScreen(15, 13, "white", "waintng for e1 mutex");
 		e1_mutex->Wait(); //local variable needs to be protected, when writing or reading from it.
 		e1_data = e1.get_elevator_status(1);
 		sprintf_s(buff, "e1 direction: %i ", e1_data.direction);
+		//Sleep(100);
+		//counter++;
 		s.WriteToScreen(15, 5, "white", buff);
 		sprintf_s(buff, "e1 floor: %i ", e1_data.floor);
 		s.WriteToScreen(15, 6, "white", buff);
@@ -42,8 +47,17 @@ UINT __stdcall Elevator1_status_dealer(void* ThreadArgs) {
 UINT __stdcall Elevator2_status_dealer(void* ThreadArgs) {
 
 	while (1) {
+		char buff[50];
 		e2_mutex->Wait(); //local variable needs to be protected, when writing or reading from it.
 		e2_data = e2.get_elevator_status(1); 
+		sprintf_s(buff, "e2 direction: %i ", e2_data.direction);
+		s.WriteToScreen(45, 5, "white", buff);
+		sprintf_s(buff, "e2 floor: %i ", e2_data.floor);
+		s.WriteToScreen(45, 6, "white", buff);
+		sprintf_s(buff, "e2 door: %i ", e2_data.door);
+		s.WriteToScreen(45, 7, "white", buff);
+		sprintf_s(buff, "e2 status: %i ", e2_data.Generalstatus);
+		s.WriteToScreen(45, 8, "white", buff);
 		e2_mutex->Signal();
 	}
 
@@ -53,25 +67,28 @@ UINT __stdcall Elevator2_status_dealer(void* ThreadArgs) {
 UINT __stdcall Get_commands(void* ThreadArgs) {
 	char buff[30];
 	while (1) {
-		//cmd_mutex->Wait();
-		//cout << "size of data in the pipe:" << DispatcherIOpipe.TestForData() << endl;
-		//if (DispatcherIOpipe.TestForData() == 1) {
 			cmd_mutex->Wait(); // maybe semaphore can be added
-
-			DispatcherIOpipe.Read(&command);
-			//cout << command << endl;
-			sprintf_s(buff, "Command from IO: %s ", command);
-			s.WriteToScreen(1, 3, "white", buff);
+			if (DispatcherIOpipe.TestForData() == 1) {
+				DispatcherIOpipe.Read(&command);
+				//cout << command << endl;
+				sprintf_s(buff, "Command from IO: %s ", command);
+				s.WriteToScreen(1, 3, "white", buff);
+			}
 			cmd_mutex->Signal();
-			
-		//	}
-		//cmd_mutex->Signal();
 	}
 	return 0;
 }
 
 int main(void) {
 	char buff[40];
+	e1_data.direction = 0;
+	e1_data.door = 1;
+	e1_data.floor = 0;
+	e1_data.Generalstatus = 0;
+	e2_data.direction = 0;
+	e2_data.door = 1;
+	e2_data.floor = 0;
+	e2_data.Generalstatus = 0;
 	//creating elevator 1, elevator 2 and IO proccesses
 	CProcess   elevator1("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\Elevator1.exe",
 		NORMAL_PRIORITY_CLASS,		// a safe priority level
@@ -104,19 +121,19 @@ int main(void) {
 	s.WriteToScreen(1, 17, "white", "commands to elevator 2");
 	int counter = 0;
 	//dispatcher code
-	elevator1.Post(7);
+	//elevator1.Post(7);
 	while (1) {
-		sprintf_s(buff, "waiting for e1_mutex: %i", counter);
-		s.WriteToScreen(2, 25, "white", buff);
+		//sprintf_s(buff, "waiting for e1_mutex: %i", counter);
+		//s.WriteToScreen(1, 25, "white", buff);
 		e1_mutex->Wait();
-		sprintf_s(buff, "waiting for e2_mutex: %i", counter);
-		s.WriteToScreen(3, 25, "white", buff);
+		//sprintf_s(buff, "waiting for e2_mutex: %i", counter);
+		//s.WriteToScreen(1, 26, "white", buff);
 		e2_mutex->Wait(); // make sure e1 e2 continuously sends data
-		sprintf_s(buff, "waiting for cmd_mutex: %i", counter);
-		s.WriteToScreen(4, 25, "white", buff);
+		//sprintf_s(buff, "waiting for cmd_mutex: %i", counter);
+		//s.WriteToScreen(1, 27, "white", buff);
 		cmd_mutex->Wait();
 
-		s.WriteToScreen(3, 5, "white", "entered the decison making loop");
+		//s.WriteToScreen(3, 4, "white", "entered the decison making loop");
 		counter++;
 		// ------------dispatcher decisions-------------- 
 		//specific commands to elevators
@@ -164,6 +181,7 @@ int main(void) {
 			s.WriteToScreen(1, 16, "white", buff);
 			sprintf_s(buff, "e2: %i", 555);
 			s.WriteToScreen(1, 18, "white", buff);
+			IO.Post(555);
 		}
 
 		//incase both elevators at fault
@@ -171,7 +189,7 @@ int main(void) {
 		//do nothing
 		}
 
-		//Up and down general commands  -----PENDING----MAIN FUNCTIONALITY----==================
+		//Up and down general commands  ---------MAIN FUNCTIONALITY----==================
 		else if (command[0] == 'u' || command[0] == 'd') {
 			//CATEGORY 0: one of them not working
 			if (e1_data.Generalstatus == 0 && e2_data.Generalstatus == 1) {
@@ -261,10 +279,13 @@ int main(void) {
 			
 		}
 
-		//
+		//clearing command becuase already executed
+		command[0] = '0';
+		cmd_mutex->Signal();
+
 		e1_mutex->Signal();
 		e2_mutex->Signal(); 
-		cmd_mutex->Signal();
+		
 	}
 
 

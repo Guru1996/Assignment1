@@ -1,5 +1,5 @@
 #include "Monitor.h"
-
+//#include "screen.h"
 Monitor::Monitor(string theName)
 {
 	MonitorDataPool = new CDataPool("__MonitorDataPool__" + theName, sizeof(struct monitorData));
@@ -10,11 +10,6 @@ Monitor::Monitor(string theName)
 	cs1 = new CSemaphore("__MonitorConsumer1__" + theName, 1, 1);
 	cs2 = new CSemaphore("__MonitorConsumer2__" + theName, 1, 1);
 
-	//initializatoin values
-	pMonitorData->Generalstatus = 1;
-	pMonitorData->floor = 0;
-	pMonitorData->direction = 0;
-	pMonitorData->door = 1;
 }
 
 Monitor::~Monitor()
@@ -33,38 +28,38 @@ struct monitorData Monitor::get_elevator_status(int consumer)
 	{
 		if (ps1->Read()>0){
 		ps1->Wait();
-		LocalData.Generalstatus = pMonitorData->Generalstatus;
-		LocalData.floor= pMonitorData->floor;
-		LocalData.direction= pMonitorData->direction;
-		LocalData.door = pMonitorData->door;
-		return LocalData;
+		LocalDataDIS.Generalstatus = pMonitorData->Generalstatus;
+		LocalDataDIS.floor= pMonitorData->floor;
+		LocalDataDIS.direction= pMonitorData->direction;
+		LocalDataDIS.door = pMonitorData->door;
 		cs1->Signal();
+		return LocalDataDIS;
 		}
 		else {
-			LocalData = LocalData;
-			return LocalData;
+			return LocalDataDIS;
 		}
 	}
 	else{
 		if (ps2->Read() > 0) {
 			ps2->Wait();
-			LocalData.Generalstatus = pMonitorData->Generalstatus;
-			LocalData.floor = pMonitorData->floor;
-			LocalData.direction = pMonitorData->direction;
-			LocalData.door = pMonitorData->door;
-			return LocalData;
+			LocalDataIO.Generalstatus = pMonitorData->Generalstatus;
+			LocalDataIO.floor = pMonitorData->floor;
+			LocalDataIO.direction = pMonitorData->direction;
+			LocalDataIO.door = pMonitorData->door;
 			cs2->Signal();
+			return LocalDataIO;
 		}
 		else {
-			LocalData = LocalData;
-			return LocalData;
+			return LocalDataIO;
 		}
 	}
 }
 
 void Monitor::update_status(int status, int floor, int direction, int door)
 {
+	//cout << "waiting for cs1" << endl;
 	cs1->Wait();
+	//cout << "waiting for cs2" << endl;
 	cs2->Wait();
 
 	//updating data

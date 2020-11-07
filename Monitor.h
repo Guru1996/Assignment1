@@ -2,6 +2,7 @@
 #ifndef   __Monitor__
 #define   __Monitor__
 #include "Z:\RTExamples\rt.h"
+//#include "screen.h"
 #include <iostream>
 #include "struct_header.h"
 using namespace std;
@@ -10,7 +11,8 @@ class Monitor{
 private:
 	CDataPool* MonitorDataPool;
 	struct monitorData *pMonitorData;
-	monitorData LocalData;
+	monitorData LocalDataIO;
+	monitorData LocalDataDIS;
 	CSemaphore* ps1;
 	CSemaphore*	cs1;
 	CSemaphore*	ps2;

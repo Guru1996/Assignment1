@@ -5,6 +5,7 @@
 //#include <conio.h>
 using namespace std;
 
+CMailbox MyMailBox;
 CRendezvous s1("Start", 4);
 Monitor e1("elevator_1");
 Monitor e2("elevator_2");
@@ -23,7 +24,7 @@ UINT __stdcall Elevator1_status_dealer(void* ThreadArgs) {
 		//e1_mutex->Wait();
 		e1_data = e1.get_elevator_status(2); //reading data and writing to the screen
 		sprintf_s(buff, "e1 direction: %i ", e1_data.direction);
-		s.WriteToScreen(1, 5, "white", "kjnkjsndjkc");
+		s.WriteToScreen(1, 5, "white", buff);
 		sprintf_s(buff, "e1 floor: %i ", e1_data.floor);
 		s.WriteToScreen(1, 6, "white", buff);
 		sprintf_s(buff, "e1 door: %i ", e1_data.door);
@@ -118,9 +119,6 @@ UINT __stdcall get_command_keyboard(void* ThreadArgs) {
 
 		if (valid) {
 			command[2] = '\0';
-			//sprintf_s(buff, "command_size: %i ", sizeof(command));
-			//cout << command << endl;
-			//s.WriteToScreen(1, 5, "white", buff);
 			DispatcherIOpipe.Write(&command); //send command to pipeline	//int TestForData (void) might need this at the other end		
 		}
 	}
@@ -132,7 +130,12 @@ int main(void) {
 	CThread   t2(Elevator2_status_dealer, ACTIVE, NULL);
 	CThread   t3(get_command_keyboard, ACTIVE, NULL);
 	s1.Wait();
-
+	while (1) {
+		if (MyMailBox.TestForMessage()) {
+			if (MyMailBox.GetMessage() == 555)
+				t3.Suspend();
+		}
+	}
 	t1.WaitForThread();
 	t2.WaitForThread();
 	t3.WaitForThread();
