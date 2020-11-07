@@ -2,7 +2,7 @@
 #include "../Monitor.h"
 #include "../Screen.h"
 #include <iostream>
-#include <conio.h>
+//#include <conio.h>
 using namespace std;
 
 CRendezvous s1("Start", 4);
@@ -18,12 +18,12 @@ Screen s("displayIO");
 CTypedPipe <char[3]> DispatcherIOpipe("DIO", 1);
 
 UINT __stdcall Elevator1_status_dealer(void* ThreadArgs) {
-	char buff[30];
+	char buff[50] = {'\0'};
 	while (1) {
 		//e1_mutex->Wait();
 		e1_data = e1.get_elevator_status(2); //reading data and writing to the screen
 		sprintf_s(buff, "e1 direction: %i ", e1_data.direction);
-		s.WriteToScreen(1, 5, "white", buff);
+		s.WriteToScreen(1, 5, "white", "kjnkjsndjkc");
 		sprintf_s(buff, "e1 floor: %i ", e1_data.floor);
 		s.WriteToScreen(1, 6, "white", buff);
 		sprintf_s(buff, "e1 door: %i ", e1_data.door);
@@ -37,7 +37,7 @@ UINT __stdcall Elevator1_status_dealer(void* ThreadArgs) {
 }
 
 UINT __stdcall Elevator2_status_dealer(void* ThreadArgs) {
-	char buff[30];
+	char buff[50] = {'\0'};
 	while (1) {
 		e2_data = e2.get_elevator_status(2);
 		sprintf_s(buff, "e2 direction: %i ", e2_data.direction);

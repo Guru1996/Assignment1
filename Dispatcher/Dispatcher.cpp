@@ -21,10 +21,18 @@ CTypedPipe <char[3]> DispatcherIOpipe("DIO", 1);
 char command[3] = {'0'};
 
 UINT __stdcall Elevator1_status_dealer(void* ThreadArgs) {
-	
+	char buff[50];
 	while (1) {
 		e1_mutex->Wait(); //local variable needs to be protected, when writing or reading from it.
 		e1_data = e1.get_elevator_status(1);
+		sprintf_s(buff, "e1 direction: %i ", e1_data.direction);
+		s.WriteToScreen(15, 5, "white", buff);
+		sprintf_s(buff, "e1 floor: %i ", e1_data.floor);
+		s.WriteToScreen(15, 6, "white", buff);
+		sprintf_s(buff, "e1 door: %i ", e1_data.door);
+		s.WriteToScreen(15, 7, "white", buff);
+		sprintf_s(buff, "e1 status: %i ", e1_data.Generalstatus);
+		s.WriteToScreen(15, 8, "white", buff);
 		e1_mutex->Signal();
 	}
 
@@ -65,19 +73,19 @@ UINT __stdcall Get_commands(void* ThreadArgs) {
 int main(void) {
 	char buff[40];
 	//creating elevator 1, elevator 2 and IO proccesses
-	CProcess   elevator1("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\Elevator1",
+	CProcess   elevator1("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\Elevator1.exe",
 		NORMAL_PRIORITY_CLASS,		// a safe priority level
 		OWN_WINDOW,			// process uses its own window  ,
 		ACTIVE				// create process in running/active state
 		);
 
-	CProcess   elevator2("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\Elevator2",
+	CProcess   elevator2("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\Elevator2.exe",
 		NORMAL_PRIORITY_CLASS,		// a safe priority level
 		OWN_WINDOW,			// process uses its own window  ,
 		ACTIVE				// create process in running/active state
 	);
 
-	CProcess   IO("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\IO",
+	CProcess   IO("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\IO.exe",
 		NORMAL_PRIORITY_CLASS,		// a safe priority level
 		OWN_WINDOW,			// process uses its own window  ,
 		ACTIVE				// create process in running/active state

@@ -16,7 +16,7 @@ void Screen::WriteToScreen(int x, int y,string color, string message)
 	//char buff[20];
 	theMutex->Wait();
 	MOVE_CURSOR(x, y);
-
+	/*
 	if (color == "red") {
 		printf("\033[1;31m");
 	}
@@ -26,6 +26,7 @@ void Screen::WriteToScreen(int x, int y,string color, string message)
 	else {
 		printf("\033[0m");
 	}
+	*/
 	cout << message;
 	cout.flush();
 

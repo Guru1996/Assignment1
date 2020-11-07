@@ -15,39 +15,13 @@ CMutex* command1_mutex = new CMutex("command1_mutex");
 CMutex* local_command_mutex = new CMutex("local_command1_mutex");
 //update_status(int status, int floor, int direction, int door)
 
-UINT __stdcall Get_commands(void* ThreadArgs) {
-	//999 means fault +1,  111 means resolved -1 , 555 meanss termination go back to 0
-	while (1) {
-		//cout << "entered getcommand loop" << endl;
-		//cout << "test for message" << MyMailBox.TestForMessage() << endl;
-		if (MyMailBox.TestForMessage() > 0) {
-			cout << "test for message" << endl;
-			command = MyMailBox.GetMessage();
-		}
-
-		//cout << "entered next statement" << endl;
-		//MyMailBox.
-		//cout << "command received e1:" << command <<endl;
-		if (command >= 100 && command <= 109) {
-			command1_mutex->Wait();
-			floors_to_stop[command % 100] = 1;
-			command1_mutex->Signal();
-		}
-		else {
-			local_command_mutex->Wait();
-			local_command = command;
-			local_command_mutex->Signal();
-		}
-	}
-	return 0;
-}
 
 //return true if elevator has pending requests in the current input direction
 int pending_request(int current_floor, int direction)
 {
-	int dummy;
+	int dummy = 0;
 	if (direction == 1) {
-		for (int a = current_floor; a++; a < 9) {
+		for (int a = current_floor; a <= 9; a++) {
 			//protecting floor_to_stop using mutex
 			command1_mutex->Wait();
 			dummy = floors_to_stop[a];
@@ -58,7 +32,7 @@ int pending_request(int current_floor, int direction)
 		}
 	}
 	else if (direction == 2) {
-		for (int a = current_floor; a--; a > 0) {
+		for (int a = current_floor; a >= 0; a--) {
 			//protecting floor_to_stop using mutex
 			command1_mutex->Wait();
 			dummy = floors_to_stop[a];
@@ -88,25 +62,23 @@ int get_direction(int current_floor) {
 }
 
 
-int main(void) {
+UINT __stdcall move_elevator(void* ThreadArgs) {
 	int current_floor = 0;
 	int status = 1;
 	int direction = 0;
 	int door = 0;
 	int dummy;
 	int dummy_command;
-	
-	//begin thread
-	//sync up with other processes and threads
-	CThread   t1(Get_commands, ACTIVE, NULL);
-	Sleep(200);
-	s1.Wait();
-	//CThread   t1(Get_commands, ACTIVE, NULL);
+
 	e1.update_status(status, current_floor, direction, door);// sending intital variables
-	//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+	cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 	//cout << "Elevator 1 started" << endl;
+
 	//keep moving in the same direction as long as there are any requests in that direction
+	int counter = 0;
 	while (1) {//999 means fault +1,  111 means resolved , 555 meanss termination go back to 0
+		cout << counter << endl;
+		counter++;
 		local_command_mutex->Wait();
 		dummy_command = local_command;
 		local_command_mutex->Signal();
@@ -114,8 +86,8 @@ int main(void) {
 			while (current_floor > 0) {
 				Sleep(1000);
 				current_floor--;
-				e1.update_status(status, current_floor, direction, door); //updating current status
-				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+				//e1.update_status(status, current_floor, direction, door); //updating current status
+				cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 
 			}
 			//open the door at 0 floor
@@ -123,8 +95,8 @@ int main(void) {
 				Sleep(500); //wait for door to open
 				door = 1;
 				direction = 0;
-				e1.update_status(status, current_floor, direction, door); //updating current status
-				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+				//e1.update_status(status, current_floor, direction, door); //updating current status
+				cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 
 			}
 		}
@@ -135,8 +107,8 @@ int main(void) {
 			local_command_mutex->Signal();
 			if (dummy_command == 999) {
 				status = 0;
-				e1.update_status(status, current_floor, direction, door); //updating current status
-				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+				//e1.update_status(status, current_floor, direction, door); //updating current status
+				cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 				//clear all pending requests
 				for (int i = 0; i < 10; i++) {
 					command1_mutex->Wait();
@@ -153,8 +125,8 @@ int main(void) {
 					status = 1;
 					direction = 0;
 					door = 0;
-					e1.update_status(status, current_floor, direction, door); //updating current status
-					//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+					//e1.update_status(status, current_floor, direction, door); //updating current status
+					cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 
 				}
 			}
@@ -168,64 +140,96 @@ int main(void) {
 		if (status == 1 && dummy_command != 555) {
 			command1_mutex->Wait();
 			dummy = floors_to_stop[current_floor];
+			cout << "entered loop" << endl;
 			command1_mutex->Signal();
 			//stopping at requested stop //stop and open the door, wait for it to close 
 			if (dummy) {
 
 				door = 1; //open door
-				e1.update_status(status, current_floor, direction, door); //updating current status
-				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+				//e1.update_status(status, current_floor, direction, door); //updating current status
+				cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 
 
 				//protecting the array with mutex //clear floor request
 				command1_mutex->Wait();
-				floors_to_stop[current_floor] = 0; 
+				floors_to_stop[current_floor] = 0;
 				command1_mutex->Signal();
 
 				//close the door and update the status
 				Sleep(500); //wait for door close
 				door = 2;
-				e1.update_status(status, current_floor, direction, door); //updating current status
-				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+			//	e1.update_status(status, current_floor, direction, door); //updating current status
+				cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 
 
 				//DECIDE where to go next: change direction if no more pending requests in the same direction
 				if (!pending_request(current_floor, direction)) {
 					direction = get_direction(current_floor);
-					e1.update_status(status, current_floor, direction, door); //updating current status
-					//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+				//	e1.update_status(status, current_floor, direction, door); //updating current status
+					cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 
 				}
 			}
 
 			//move the lift, change floors
 			if (direction == 0) {
+				cout << "entered next loop" << endl;
 				direction = get_direction(current_floor);
-				e1.update_status(status, current_floor, direction, door); //updating current status
-				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+				cout << "direction " << direction << endl;
+				//e1.update_status(status, current_floor, direction, door); //updating current status
+				//cout << "status updated222222 " << endl;
+				cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 
 			}
 
 			if (direction == 1) {
 				Sleep(1000);
 				current_floor++;
-				e1.update_status(status, current_floor, direction, door); //updating current status
-				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+				//e1.update_status(status, current_floor, direction, door); //updating current status
+				cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 
 			}
 
 			if (direction == 2) {
 				Sleep(1000);
 				current_floor--;
-				e1.update_status(status, current_floor, direction, door); //updating current status
-				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+				//e1.update_status(status, current_floor, direction, door); //updating current status
+				cout << "status= " << status << "current_floor= " << current_floor << "direction= " << direction << "door= " << door << "    " << endl;
 
 			}
 
 		}
-
+		cout << "direction from while loop " << direction << endl;
+		Sleep(500);
 	}//while loop end
+	return 0;
+}
 
+int main(void) {
+
+	CThread   t1(move_elevator, ACTIVE, NULL);
+	Sleep(200);
+	s1.Wait();
+
+	//
+	//999 means fault +1,  111 means resolved -1 , 555 meanss termination go back to 0
+	while (1) {
+		if (MyMailBox.TestForMessage()>0){
+		command = MyMailBox.GetMessage();
+		cout << "command e1 " << command <<endl;
+		if (command >= 100 && command <= 109) {
+			command1_mutex->Wait();
+			floors_to_stop[command % 100] = 1;
+			command1_mutex->Signal();
+		}
+		else {
+			local_command_mutex->Wait();
+			local_command = command;
+			local_command_mutex->Signal();
+		}
+		}
+	}
+	//
 	t1.WaitForThread();
 	return 0;
 }
