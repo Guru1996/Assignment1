@@ -8,9 +8,9 @@ Monitor e1("elevator_1");
 monitorData e1_data;
 int floors_to_stop[10] = { 0 };
 
-UINT command;
+UINT command =0;
 UINT local_command = 0;
-CMailbox   MyMailBox;
+CMailbox MyMailBox;
 CMutex* command1_mutex = new CMutex("command1_mutex");
 CMutex* local_command_mutex = new CMutex("local_command1_mutex");
 //update_status(int status, int floor, int direction, int door)
@@ -18,7 +18,16 @@ CMutex* local_command_mutex = new CMutex("local_command1_mutex");
 UINT __stdcall Get_commands(void* ThreadArgs) {
 	//999 means fault +1,  111 means resolved -1 , 555 meanss termination go back to 0
 	while (1) {
-		command = MyMailBox.GetMessage();
+		//cout << "entered getcommand loop" << endl;
+		//cout << "test for message" << MyMailBox.TestForMessage() << endl;
+		if (MyMailBox.TestForMessage() > 0) {
+			cout << "test for message" << endl;
+			command = MyMailBox.GetMessage();
+		}
+
+		//cout << "entered next statement" << endl;
+		//MyMailBox.
+		//cout << "command received e1:" << command <<endl;
 		if (command >= 100 && command <= 109) {
 			command1_mutex->Wait();
 			floors_to_stop[command % 100] = 1;
@@ -83,16 +92,19 @@ int main(void) {
 	int current_floor = 0;
 	int status = 1;
 	int direction = 0;
-	int door = 1;
+	int door = 0;
 	int dummy;
 	int dummy_command;
 	
 	//begin thread
-	CThread   t1(Get_commands, ACTIVE, NULL);
-
 	//sync up with other processes and threads
+	CThread   t1(Get_commands, ACTIVE, NULL);
+	Sleep(200);
 	s1.Wait();
-
+	//CThread   t1(Get_commands, ACTIVE, NULL);
+	e1.update_status(status, current_floor, direction, door);// sending intital variables
+	//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+	//cout << "Elevator 1 started" << endl;
 	//keep moving in the same direction as long as there are any requests in that direction
 	while (1) {//999 means fault +1,  111 means resolved , 555 meanss termination go back to 0
 		local_command_mutex->Wait();
@@ -103,6 +115,8 @@ int main(void) {
 				Sleep(1000);
 				current_floor--;
 				e1.update_status(status, current_floor, direction, door); //updating current status
+				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+
 			}
 			//open the door at 0 floor
 			if (current_floor == 0) {
@@ -110,6 +124,8 @@ int main(void) {
 				door = 1;
 				direction = 0;
 				e1.update_status(status, current_floor, direction, door); //updating current status
+				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+
 			}
 		}
 
@@ -120,6 +136,7 @@ int main(void) {
 			if (dummy_command == 999) {
 				status = 0;
 				e1.update_status(status, current_floor, direction, door); //updating current status
+				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
 				//clear all pending requests
 				for (int i = 0; i < 10; i++) {
 					command1_mutex->Wait();
@@ -137,6 +154,8 @@ int main(void) {
 					direction = 0;
 					door = 0;
 					e1.update_status(status, current_floor, direction, door); //updating current status
+					//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+
 				}
 			}
 		}
@@ -155,6 +174,8 @@ int main(void) {
 
 				door = 1; //open door
 				e1.update_status(status, current_floor, direction, door); //updating current status
+				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+
 
 				//protecting the array with mutex //clear floor request
 				command1_mutex->Wait();
@@ -165,11 +186,15 @@ int main(void) {
 				Sleep(500); //wait for door close
 				door = 2;
 				e1.update_status(status, current_floor, direction, door); //updating current status
+				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+
 
 				//DECIDE where to go next: change direction if no more pending requests in the same direction
 				if (!pending_request(current_floor, direction)) {
 					direction = get_direction(current_floor);
 					e1.update_status(status, current_floor, direction, door); //updating current status
+					//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+
 				}
 			}
 
@@ -177,18 +202,24 @@ int main(void) {
 			if (direction == 0) {
 				direction = get_direction(current_floor);
 				e1.update_status(status, current_floor, direction, door); //updating current status
+				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+
 			}
 
 			if (direction == 1) {
 				Sleep(1000);
 				current_floor++;
 				e1.update_status(status, current_floor, direction, door); //updating current status
+				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+
 			}
 
 			if (direction == 2) {
 				Sleep(1000);
 				current_floor--;
 				e1.update_status(status, current_floor, direction, door); //updating current status
+				//cout << "status= " << status << "current_floor" << current_floor << "direction" << direction << "door" << door << "    ";
+
 			}
 
 		}

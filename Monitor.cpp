@@ -31,16 +31,34 @@ struct monitorData Monitor::get_elevator_status(int consumer)
 {
 	if (consumer == 1)  //1 for dispatcher, 2 for IO
 	{
+		if (ps1->Read()>0){
 		ps1->Wait();
-		LocalData = *pMonitorData;
+		LocalData.Generalstatus = pMonitorData->Generalstatus;
+		LocalData.floor= pMonitorData->floor;
+		LocalData.direction= pMonitorData->direction;
+		LocalData.door = pMonitorData->door;
 		return LocalData;
 		cs1->Signal();
+		}
+		else {
+			LocalData = LocalData;
+			return LocalData;
+		}
 	}
 	else{
-		ps2->Wait();
-		LocalData = *pMonitorData;
-		return LocalData;
-		cs2->Signal();
+		if (ps2->Read() > 0) {
+			ps2->Wait();
+			LocalData.Generalstatus = pMonitorData->Generalstatus;
+			LocalData.floor = pMonitorData->floor;
+			LocalData.direction = pMonitorData->direction;
+			LocalData.door = pMonitorData->door;
+			return LocalData;
+			cs2->Signal();
+		}
+		else {
+			LocalData = LocalData;
+			return LocalData;
+		}
 	}
 }
 

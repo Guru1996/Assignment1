@@ -19,6 +19,7 @@ UINT __stdcall Get_commands(void* ThreadArgs) {
 	//999 means fault +1,  111 means resolved -1 , 555 meanss termination go back to 0
 	while (1) {
 		command = MyMailBox.GetMessage();
+		cout << "command received e2:" << command << endl;
 		if (command >= 100 && command <= 109) {
 			command2_mutex->Wait();
 			floors_to_stop[command % 100] = 1;
@@ -83,7 +84,7 @@ int main(void) {
 	int current_floor = 0;
 	int status = 1;
 	int direction = 0;
-	int door = 1;
+	int door = 0;
 	int dummy;
 	int dummy_command;
 
@@ -92,7 +93,7 @@ int main(void) {
 
 	//sync up with other processes and threads
 	s1.Wait();
-
+	e2.update_status(status, current_floor, direction, door);// sending intital variables
 	//keep moving in the same direction as long as there are any requests in that direction
 	while (1) {//999 means fault +1,  111 means resolved , 555 meanss termination go back to 0
 		local_command_mutex->Wait();
