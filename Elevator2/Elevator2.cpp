@@ -21,28 +21,40 @@ int pending_request(int current_floor, int direction)
 {
 	int dummy = 0;
 	if (direction == 1) {
-		for (int a = current_floor; a <= 9; a++) {
-			//protecting floor_to_stop using mutex
-			command1_mutex->Wait();
-			dummy = floors_to_stop[a];
-			command1_mutex->Signal();
-			if (dummy) {
-				return 1;
+		if (current_floor == 9) {
+			return 0;
+		}
+		else {
+			for (int a = current_floor; a <= 9; a++) {
+				//protecting floor_to_stop using mutex
+				command1_mutex->Wait();
+				dummy = floors_to_stop[a];
+				command1_mutex->Signal();
+				if (dummy) {
+					return 1;
+				}
 			}
 		}
 	}
 	else if (direction == 2) {
-		for (int a = current_floor; a >= 0; a--) {
-			//protecting floor_to_stop using mutex
-			command1_mutex->Wait();
-			dummy = floors_to_stop[a];
-			command1_mutex->Signal();
-			if (dummy) {
-				return 1;
+		if (current_floor == 0) {
+			return 0;
+		}
+		else {
+			for (int a = current_floor; a >= 0; a--) {
+				//protecting floor_to_stop using mutex
+				command1_mutex->Wait();
+				dummy = floors_to_stop[a];
+				command1_mutex->Signal();
+				if (dummy) {
+					return 1;
+				}
 			}
 		}
 	}
+
 	return 0;
+
 }
 
 //gives dirrection where requests are pending, else returns 0 = stationary

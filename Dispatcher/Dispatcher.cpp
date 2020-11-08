@@ -170,6 +170,8 @@ int main(void) {
 			}
 			else {
 				elevator2.Post(111); //send fault resolved to e2
+				sprintf_s(buff, "e2: %i", 111);
+				s.WriteToScreen(1, 18, "white", buff);
 			}
 
 		//terminate command to elevators
