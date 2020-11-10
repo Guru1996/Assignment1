@@ -1,4 +1,4 @@
-#include "Z:\RTExamples\rt.h"
+#include "C:\RTExamples\RTExamples\rt.h"
 #include "../Monitor.h"
 #include "../Screen.h"
 #include <iostream>
@@ -19,7 +19,16 @@ CMutex* cmd_mutex = new CMutex("cmd_mutex");
 
 CTypedPipe <char[3]> DispatcherIOpipe("DIO", 1);
 char command[3] = {'0'};
+void ShowConsoleCursor(bool showFlag)
+{
+	HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
 
+	CONSOLE_CURSOR_INFO     cursorInfo;
+
+	GetConsoleCursorInfo(out, &cursorInfo);
+	cursorInfo.bVisible = showFlag; // set the cursor visibility
+	SetConsoleCursorInfo(out, &cursorInfo);
+}
 
 UINT __stdcall Elevator1_status_dealer(void* ThreadArgs) {
 	char buff[50];
@@ -28,16 +37,16 @@ UINT __stdcall Elevator1_status_dealer(void* ThreadArgs) {
 		//s.WriteToScreen(15, 13, "white", "waintng for e1 mutex");
 		e1_mutex->Wait(); //local variable needs to be protected, when writing or reading from it.
 		e1_data = e1.get_elevator_status(1);
-		sprintf_s(buff, "e1 direction: %i ", e1_data.direction);
+		sprintf_s(buff, "Direction: %i ", e1_data.direction);
 		//Sleep(100);
 		//counter++;
-		s.WriteToScreen(15, 5, "white", buff);
-		sprintf_s(buff, "e1 floor: %i ", e1_data.floor);
-		s.WriteToScreen(15, 6, "white", buff);
-		sprintf_s(buff, "e1 door: %i ", e1_data.door);
-		s.WriteToScreen(15, 7, "white", buff);
-		sprintf_s(buff, "e1 status: %i ", e1_data.Generalstatus);
-		s.WriteToScreen(15, 8, "white", buff);
+		s.WriteToScreen(0, 10, "lightBlue", buff);
+		sprintf_s(buff, "Current Floor Floor: %i ", e1_data.floor);
+		s.WriteToScreen(0, 11, "lightBlue", buff);
+		sprintf_s(buff, "Door Status: %i ", e1_data.door);
+		s.WriteToScreen(0, 12, "lightBlue", buff);
+		sprintf_s(buff, "Service Status: %i ", e1_data.Generalstatus);
+		s.WriteToScreen(0, 13, "lightBlue", buff);
 		e1_mutex->Signal();
 	}
 
@@ -50,14 +59,14 @@ UINT __stdcall Elevator2_status_dealer(void* ThreadArgs) {
 		char buff[50];
 		e2_mutex->Wait(); //local variable needs to be protected, when writing or reading from it.
 		e2_data = e2.get_elevator_status(1); 
-		sprintf_s(buff, "e2 direction: %i ", e2_data.direction);
-		s.WriteToScreen(45, 5, "white", buff);
+		sprintf_s(buff, "Direction: %i  ", e2_data.direction);
+		s.WriteToScreen(30, 10, "yellow", buff);
 		sprintf_s(buff, "e2 floor: %i ", e2_data.floor);
-		s.WriteToScreen(45, 6, "white", buff);
-		sprintf_s(buff, "e2 door: %i ", e2_data.door);
-		s.WriteToScreen(45, 7, "white", buff);
-		sprintf_s(buff, "e2 status: %i ", e2_data.Generalstatus);
-		s.WriteToScreen(45, 8, "white", buff);
+		s.WriteToScreen(30, 11, "yellow", buff);
+		sprintf_s(buff, "Door Status: %i ", e2_data.door);
+		s.WriteToScreen(30, 12, "yellow", buff);
+		sprintf_s(buff, "Service Status: %i ", e2_data.Generalstatus);
+		s.WriteToScreen(30, 13, "yellow", buff);
 		e2_mutex->Signal();
 	}
 
@@ -71,8 +80,8 @@ UINT __stdcall Get_commands(void* ThreadArgs) {
 			if (DispatcherIOpipe.TestForData() == 1) {
 				DispatcherIOpipe.Read(&command);
 				//cout << command << endl;
-				sprintf_s(buff, "Command from IO: %s ", command);
-				s.WriteToScreen(1, 3, "white", buff);
+				sprintf_s(buff, "Command from IO: \n %s ", command);
+				s.WriteToScreen(0, 0, "red", buff);
 			}
 			cmd_mutex->Signal();
 	}
@@ -90,24 +99,25 @@ int main(void) {
 	e2_data.floor = 0;
 	e2_data.Generalstatus = 0;
 	//creating elevator 1, elevator 2 and IO proccesses
-	CProcess   elevator1("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\Elevator1.exe",
+	CProcess   elevator1("C:\\RTExamples\\RTExamples\\Assignment1\\Debug\\Elevator1.exe",
 		NORMAL_PRIORITY_CLASS,		// a safe priority level
 		OWN_WINDOW,			// process uses its own window  ,
 		ACTIVE				// create process in running/active state
 		);
 
-	CProcess   elevator2("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\Elevator2.exe",
+	CProcess   elevator2("C:\\RTExamples\\RTExamples\\Assignment1\\Debug\\Elevator2.exe",
 		NORMAL_PRIORITY_CLASS,		// a safe priority level
 		OWN_WINDOW,			// process uses its own window  ,
 		ACTIVE				// create process in running/active state
 	);
 
-	CProcess   IO("Z:\\Users\\98ani\\Desktop\\CPEN_333\\Assignment_1\\Assignment1_local\\ASN1\\x64\\Debug\\IO.exe",
+	CProcess   IO("C:\\RTExamples\\RTExamples\\Assignment1\\Debug\\IO.exe",
 		NORMAL_PRIORITY_CLASS,		// a safe priority level
 		OWN_WINDOW,			// process uses its own window  ,
 		ACTIVE				// create process in running/active state
 	);
 	s1.Wait();
+	ShowConsoleCursor(0);//stop showing the cursor on console window
 	//Sleep(1000);
 	CThread   t1(Elevator1_status_dealer, ACTIVE, NULL);
 	CThread   t2(Elevator2_status_dealer, ACTIVE, NULL);
@@ -116,9 +126,9 @@ int main(void) {
 	//wait for processes and threads to be created in other programs
 	
 	//Sleep(1000);
-	cout << "while starting" << endl;
-	s.WriteToScreen(1, 15, "white", "commands to elevator 1");
-	s.WriteToScreen(1, 17, "white", "commands to elevator 2");
+	//cout << "while starting" << endl;
+	s.WriteToScreen(0, 15, "white", "Commands to Elevator 1");
+	s.WriteToScreen(30, 15, "white", "Commands to Elevator 2");
 	int counter = 0;
 	//dispatcher code
 	//elevator1.Post(7);
@@ -140,12 +150,12 @@ int main(void) {
 		if (command[0] == '1' && e1_data.Generalstatus == 1) {
 			elevator1.Post(100 + (int)(command[1]) - (int)('0')); //command specific to e1
 			sprintf_s(buff, "e1: %i", 100 + (int)(command[1]) - (int)('0'));
-			s.WriteToScreen(1, 16, "white", buff);
+			s.WriteToScreen(0, 16, "white", buff);
 		}
 		else if (command[0] == '2' && e2_data.Generalstatus == 1) {
 			elevator2.Post(100 + (int)(command[1]) - (int)('0')); //command specific to e2
 			sprintf_s(buff, "e2: %i", 100 + (int)(command[1]) - (int)('0'));
-			s.WriteToScreen(1, 18, "white", buff);
+			s.WriteToScreen(30, 16, "white", buff);
 
 		}
 
@@ -154,24 +164,24 @@ int main(void) {
 			if (command[1] == '1') {
 				elevator1.Post(999); //send fault arrival to e1
 				sprintf_s(buff, "e1: %i", 999);
-				s.WriteToScreen(1, 16, "white", buff);
+				s.WriteToScreen(0, 16, "white", buff);
 			}
 			else {
 				elevator2.Post(999); //send fault arrival to e2
 				sprintf_s(buff, "e2: %i", 999);
-				s.WriteToScreen(1, 18, "white", buff);
+				s.WriteToScreen(30, 16, "white", buff);
 			}
 		}
 		else if (command[0] == '-') {
 			if (command[1] == '1') {
 				elevator1.Post(111); //send fault resolved to e1  111 means +1
 				sprintf_s(buff, "e1: %i", 111);
-				s.WriteToScreen(1, 16, "white", buff);
+				s.WriteToScreen(0, 16, "white", buff);
 			}
 			else {
 				elevator2.Post(111); //send fault resolved to e2
 				sprintf_s(buff, "e2: %i", 111);
-				s.WriteToScreen(1, 18, "white", buff);
+				s.WriteToScreen(30, 16, "white", buff);
 			}
 
 		//terminate command to elevators
@@ -180,9 +190,9 @@ int main(void) {
 			elevator1.Post(555);
 			elevator2.Post(555);//stop accepting commands
 			sprintf_s(buff, "e1: %i", 555);
-			s.WriteToScreen(1, 16, "white", buff);
+			s.WriteToScreen(0, 16, "white", buff);
 			sprintf_s(buff, "e2: %i", 555);
-			s.WriteToScreen(1, 18, "white", buff);
+			s.WriteToScreen(30, 16, "white", buff);
 			IO.Post(555);
 		}
 
@@ -197,12 +207,12 @@ int main(void) {
 			if (e1_data.Generalstatus == 0 && e2_data.Generalstatus == 1) {
 				elevator2.Post(100 + (int)(command[1]) - (int)('0')); //send command to elevator 2 if 1 not working
 				sprintf_s(buff, "e2: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 18, "white", buff);
+				s.WriteToScreen(30, 16, "white", buff);
 			}
 			else if (e2_data.Generalstatus == 0 && e1_data.Generalstatus == 1) {
 				elevator1.Post(100 + (int)(command[1]) - (int)('0')); //send command to elevator 1 if 2 not working
 				sprintf_s(buff, "e1: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 16, "white", buff);
+				s.WriteToScreen(0, 16, "white", buff);
 			}
 
 			//CATERGORY 1: same direction requests
@@ -210,26 +220,26 @@ int main(void) {
 			else if (command[0] == 'u' && e1_data.direction== 1 && ( (((int)(command[1]) - (int)('0')) - e1_data.floor) > 0)) {
 				elevator1.Post(100 + (int)(command[1]) - (int)('0'));
 				sprintf_s(buff, "e1: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 16, "white", buff);
+				s.WriteToScreen(0, 16, "white", buff);
 
 			}
 			//up request and lift 2 going up and floor requested higher than current floor
 			else if (command[0] == 'u' && e2_data.direction == 1 && ( (((int)(command[1]) - (int)('0')) - e2_data.floor) > 0)) {
 				elevator2.Post(100 + (int)(command[1]) - (int)('0'));
 				sprintf_s(buff, "e2: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 18, "white", buff);
+				s.WriteToScreen(30, 16, "white", buff);
 			}
 			//down request and lift 1 going down and floor requested lower than current floor
 			else if (command[0] == 'd' && e1_data.direction == 2 && ((e1_data.floor - ((int)(command[1]) - (int)'0')) > 0)) {
 				elevator1.Post(100 + (int)(command[1]) - (int)('0'));
 				sprintf_s(buff, "e1: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 16, "white", buff);
+				s.WriteToScreen(0, 16, "white", buff);
 			}
 			//down request and lift 2 going down and floor requested lower than current floor
 			else if (command[0] == 'd' && e2_data.direction == 2 && ((e2_data.floor- ((int)(command[1]) - (int)('0'))) > 0)) {
 				elevator2.Post(100 + (int)(command[1]) - (int)('0'));
 				sprintf_s(buff, "e2: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 18, "white", buff);
+				s.WriteToScreen(30, 16, "white", buff);
 			}
 
 			//CATEGORY 2: stationary elevators
@@ -239,44 +249,44 @@ int main(void) {
 				if (abs(e2_data.floor - ((int)(command[1]) - (int)('0'))) < abs(e1_data.floor - ((int)(command[1]) - (int)('0')))) {
 					elevator2.Post(100 + (int)(command[1]) - (int)('0'));
 					sprintf_s(buff, "e2: %i", 100 + (int)(command[1]) - (int)('0'));
-					s.WriteToScreen(1, 18, "white", buff);
+					s.WriteToScreen(30, 16, "white", buff);
 					}
 				else {
 					elevator1.Post(100 + (int)(command[1]) - (int)('0'));
 					sprintf_s(buff, "e1: %i", 100 + (int)(command[1]) - (int)('0'));
-					s.WriteToScreen(1, 16, "white", buff);
+					s.WriteToScreen(0, 16, "white", buff);
 				}
 				}
 			//elevator 2 is stationary, send that
 			else if (e2_data.direction == 0) {
 				elevator2.Post(100 + (int)(command[1]) - (int)('0'));
 				sprintf_s(buff, "e2: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 18, "white", buff);
+				s.WriteToScreen(30, 16, "white", buff);
 			}
 			//elevator 1 is stationary, send that
 			else if (e1_data.direction == 0) {
 				elevator1.Post(100 + (int)(command[1]) - (int)('0'));
 				sprintf_s(buff, "e1: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 16, "white", buff);
+				s.WriteToScreen(0, 16, "white", buff);
 			}
 			
 			//CATEGORY 3: elevators moving in unfavourable direction, send command to the one farther from it 
 			else if (abs(e2_data.floor - ((int)(command[1]) - (int)('0'))) > abs(e1_data.floor - ((int)(command[1]) - (int)('0')))) {
 				elevator2.Post(100 + (int)(command[1]) - (int)('0'));
 				sprintf_s(buff, "e2: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 18, "white", buff);
+				s.WriteToScreen(30, 16, "white", buff);
 			}
 			else if (abs(e2_data.floor - ((int)(command[1]) - (int)('0'))) < abs(e1_data.floor - ((int)(command[1]) - (int)('0')))) {
 				elevator1.Post(100 + (int)(command[1]) - (int)('0'));
 				sprintf_s(buff, "e1: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 16, "white", buff);
+				s.WriteToScreen(0, 16, "white", buff);
 			}
 			
 			//CATEGORY 4: incase a command doesn't satisty any of the conditions above
 			else {
-				elevator2.Post(100 + (int)(command[1]) - (int)('0'));
+				elevator1.Post(100 + (int)(command[1]) - (int)('0'));
 				sprintf_s(buff, "e1: %i", 100 + (int)(command[1]) - (int)('0'));
-				s.WriteToScreen(1, 16, "white", buff);
+				s.WriteToScreen(0, 16, "white", buff);
 			}
 			
 		}
@@ -300,3 +310,4 @@ int main(void) {
 	t3.WaitForThread();
 	return 0;
 }
+
