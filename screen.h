@@ -1,9 +1,11 @@
 #pragma once
 #ifndef   __Screen__
 #define   __Screen__
-#include "Z:\RTExamples\rt.h"
+#include "C:\RTExamples\RTExamples\rt.h"
 #include <string>
 #include <iostream>
+#include <stdio.h>
+#include <windows.h>
 using namespace std;
 
 class Screen{

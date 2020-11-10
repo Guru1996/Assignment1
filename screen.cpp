@@ -13,20 +13,39 @@ Screen::~Screen()
 
 void Screen::WriteToScreen(int x, int y,string color, string message)
 {
+	//BLUE = 1
+	//GREEN = 2
+	//RED = 4
+	//WHITE = 15
+	//YELLOW=6
+	//LIGHT BLUE=9
 	//char buff[20];
+
 	theMutex->Wait();
 	MOVE_CURSOR(x, y);
-	/*
-	if (color == "red") {
-		printf("\033[1;31m");
+	
+	HANDLE hConsole;
+
+	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	if(color=="blue"){
+		SetConsoleTextAttribute(hConsole, 1);
+	}
+	else if (color == "red") {
+		SetConsoleTextAttribute(hConsole, 4);
 	}
 	else if (color == "green") {
-		printf("\033[0;32m");
+		SetConsoleTextAttribute(hConsole, 2);
+	}
+	else if(color=="lightBlue") {
+		SetConsoleTextAttribute(hConsole, 9);
+	}
+	else if (color == "yellow") {
+		SetConsoleTextAttribute(hConsole, 6);
 	}
 	else {
-		printf("\033[0m");
+		SetConsoleTextAttribute(hConsole, 15);
 	}
-	*/
+	
 	cout << message;
 	cout.flush();
 
